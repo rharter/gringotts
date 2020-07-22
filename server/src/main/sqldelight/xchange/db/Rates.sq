@@ -1,0 +1,33 @@
+import java.time.LocalDate;
+
+CREATE TABLE rates(
+  date VARCHAR(27) as LocalDate NOT NULL,
+  currency VARCHAR(3) NOT NULL,
+  rate DOUBLE NOT NULL,
+  PRIMARY KEY(date, currency)
+);
+
+insertRate:
+INSERT INTO rates (date, currency, rate)
+VALUES ?
+;
+
+updateRate:
+UPDATE rates
+SET rate = ?
+WHERE date = ? AND currency = ?
+;
+
+selectByDateAndCurrency:
+SELECT *
+FROM rates
+WHERE date IN ?
+  AND currency IN ?
+;
+
+latestRates:
+SELECT *
+FROM rates
+WHERE date = (SELECT MAX(date) FROM rates)
+ORDER BY currency ASC
+;
