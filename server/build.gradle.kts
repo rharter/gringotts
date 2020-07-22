@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   application
   kotlin("jvm")
+  kotlin("plugin.serialization") version "1.3.72"
   id("com.github.johnrengelman.shadow") version "6.0.0"
   id("com.squareup.sqldelight")
 }
@@ -38,8 +39,8 @@ dependencies {
   implementation("io.ktor:ktor-server-netty:$ktorVersion")
   implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
   implementation("io.ktor:ktor-freemarker:$ktorVersion")
+  implementation("io.ktor:ktor-serialization:$ktorVersion")
   implementation("ch.qos.logback:logback-classic:1.2.3")
-//  implementation("ch.qos.logback:logback-core:1.2.3")
   implementation("org.slf4j:slf4j-api:1.7.26")
 
   val sqldelightVersion = "1.4.0"

@@ -1,7 +1,7 @@
 import java.time.LocalDate;
 
 CREATE TABLE rates(
-  date VARCHAR(27) as LocalDate NOT NULL,
+  date VARCHAR(10) NOT NULL,
   currency VARCHAR(3) NOT NULL,
   rate DOUBLE NOT NULL,
   PRIMARY KEY(date, currency)
@@ -16,6 +16,13 @@ updateRate:
 UPDATE rates
 SET rate = ?
 WHERE date = ? AND currency = ?
+;
+
+selectByCurrency:
+SELECT *
+FROM rates
+WHERE currency = ?
+  AND date = (SELECT MAX(date) FROM rates)
 ;
 
 selectByDateAndCurrency:

@@ -34,10 +34,7 @@ fun Database(app: Application): Database {
   }
 
   val driver = dataSource.asJdbcDriver()
-  val db = Database(
-    driver,
-    Rates.Adapter(LocalDateColumnAdapter)
-  )
+  val db = Database(driver)
   app.environment.monitor.subscribe(ApplicationStopped) { driver.close() }
 
   driver.migrate(Schema, app.log)
@@ -80,9 +77,3 @@ private fun SqlDriver.migrate(schema: SqlDriver.Schema, logger: Logger? = null) 
       }
     }
   }
-
-private object LocalDateColumnAdapter :
-  ColumnAdapter<LocalDate, String> {
-  override fun decode(databaseValue: String): LocalDate = LocalDate.parse(databaseValue)
-  override fun encode(value: LocalDate) = value.toString()
-}
