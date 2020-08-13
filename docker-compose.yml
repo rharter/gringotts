@@ -1,0 +1,33 @@
+version: "3.1"
+services:
+  web:
+    build: .
+    command: ["/app/lib/server", "-config=/app/application.conf"]
+    depends_on:
+      - db
+    ports:
+      - "8000:8080"
+    networks:
+      - default
+      - backend
+    volumes:
+      - .production/application.conf:/app/application.conf
+    environment:
+      DATABASE_URL: jdbc:mysql://db/xchange?user=xchange&password=xchangepassword
+  db:
+    image: mariadb
+    ports:
+      - "3306:3306"
+    networks:
+      - backend
+    environment:
+      MYSQL_ROOT_PASSWORD: mypassword
+      MYSQL_DATABASE: xchange
+      MYSQL_USER: xchange
+      MYSQL_PASSWORD: xchangepassword
+    volumes:
+      - .production/database:/var/lib/mysql
+
+networks:
+  backend:
+    internal: true

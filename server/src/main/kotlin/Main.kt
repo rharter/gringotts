@@ -10,12 +10,15 @@ import io.ktor.client.request.get
 import io.ktor.features.CallLogging
 import io.ktor.features.ContentNegotiation
 import io.ktor.features.DefaultHeaders
+import io.ktor.http.HttpStatusCode
 import io.ktor.response.respond
 import io.ktor.response.respondText
 import io.ktor.routing.Routing
 import io.ktor.routing.get
 import io.ktor.routing.route
 import io.ktor.serialization.json
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import org.w3c.dom.NodeList
 import xchange.db.Rates
@@ -24,8 +27,11 @@ import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.xpath.XPathConstants
 import javax.xml.xpath.XPathFactory
 
+val baseRate = Rates("", "EUR", 1.0)
+
 fun Application.main() {
   val db = Database(this)
+  val apiSecret = environment.config.config("service").property("api_secret").getString()
 
   install(CallLogging)
   install(DefaultHeaders)
@@ -34,6 +40,11 @@ fun Application.main() {
   }
   install(Routing) {
     get("refresh") {
+      if (call.request.queryParameters["api-key"] != apiSecret) {
+        call.respond(HttpStatusCode.Unauthorized, "You are not authorized to access this endpoint.")
+        return@get
+      }
+
       val historical = call.request.queryParameters.contains("historical")
 
       val url = if (historical) {
@@ -43,7 +54,9 @@ fun Application.main() {
       }
 
       val channel: ByteArray = HttpClient(OkHttp).use { it.get(url) }
-      val doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(ByteArrayInputStream(channel))
+      val doc = withContext(Dispatchers.IO) {
+        DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(ByteArrayInputStream(channel))
+      }
 
       val parser = XPathFactory.newInstance().newXPath()
       val dates = parser.evaluate("/Envelope/Cube/Cube", doc, XPathConstants.NODESET) as NodeList
@@ -94,19 +107,23 @@ fun Application.main() {
           .map { it.currency to (1 / baseRate * it.rate) }
           .toMap()
 
-        call.respond(RateResponse(base, rates.first().date, mappedRates))
+        call.respond(RateResponse(base, rates.firstOrNull()?.date ?: "", mappedRates))
       }
 
       get("convert") {
-        val from = call.request.queryParameters["from"] ?: throw IllegalArgumentException("Missing query parameter: from")
+        val from =
+          call.request.queryParameters["from"] ?: throw IllegalArgumentException("Missing query parameter: from")
         val to = call.request.queryParameters["to"] ?: throw IllegalArgumentException("Missing query parameter: to")
-        val amount = call.request.queryParameters["amount"]?.toDouble() ?: throw IllegalArgumentException("Missing query parameter: amount")
+        val amount = call.request.queryParameters["amount"]?.toDouble()
+          ?: throw IllegalArgumentException("Missing query parameter: amount")
 
-        val srcRate = db.ratesQueries.selectByCurrency(from).executeAsOne()
-        val dstRate = db.ratesQueries.selectByCurrency(to).executeAsOne()
+        val srcRate = if (from == baseRate.currency) baseRate else db.ratesQueries.selectByCurrency(from).executeAsOne()
+        val dstRate = if (to == baseRate.currency) baseRate else db.ratesQueries.selectByCurrency(to).executeAsOne()
+
         val rate = 1.0 / srcRate.rate * dstRate.rate
+        val date = if (srcRate.date.isNotBlank()) srcRate.date else dstRate.date
 
-        call.respond(ConversionResult(srcRate.date, amount * rate))
+        call.respond(ConversionResult(date, amount * rate))
       }
     }
   }
