@@ -39,6 +39,10 @@ fun Application.main() {
     json()
   }
   install(Routing) {
+    get("healthz") {
+      call.respondText("ok")
+    }
+
     get("refresh") {
       if (call.request.queryParameters["api-key"] != apiSecret) {
         call.respond(HttpStatusCode.Unauthorized, "You are not authorized to access this endpoint.")

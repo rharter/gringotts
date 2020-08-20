@@ -1,9 +1,10 @@
 package xchange
 
-import com.mchange.v2.c3p0.DataSources
 import com.squareup.sqldelight.TransacterImpl
 import com.squareup.sqldelight.db.SqlDriver
 import com.squareup.sqldelight.sqlite.driver.asJdbcDriver
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import io.ktor.application.Application
 import io.ktor.application.ApplicationStopped
 import io.ktor.application.log
@@ -24,14 +25,23 @@ fun Database(app: Application): Database {
     connectionUrl = "jdbc:h2:file:${dbFile.absolutePath}"
   }
 
-  val poolSize = dbConfig.propertyOrNull("poolSize")?.getString()?.toInt()
+  val config = HikariConfig()
 
   app.log.debug("Connecting to datasource: $connectionUrl")
-  var dataSource = DataSources.unpooledDataSource(connectionUrl)
-  if (poolSize != null && poolSize > 1) {
-    dataSource = DataSources.pooledDataSource(dataSource, mapOf("maxPoolSize" to poolSize))
+  config.jdbcUrl = connectionUrl
+
+  val username = dbConfig.propertyOrNull("username")?.getString()
+  val password = dbConfig.propertyOrNull("password")?.getString()
+  if (username != null && password != null) {
+    config.username = username
+    config.password = password
   }
 
+  dbConfig.propertyOrNull("poolSize")?.getString()?.toInt()?.let {
+    config.maximumPoolSize = it
+  }
+
+  val dataSource = HikariDataSource(config)
   val driver = dataSource.asJdbcDriver()
   val db = Database(driver)
   app.environment.monitor.subscribe(ApplicationStopped) { driver.close() }

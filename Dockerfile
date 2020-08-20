@@ -7,7 +7,7 @@ RUN ./gradlew build --no-daemon --stacktrace
 
 FROM adoptopenjdk/openjdk8:alpine-jre
 
-ENV APPLICATION_USER ktorm
+ENV APPLICATION_USER ktor
 RUN adduser -D -g '' $APPLICATION_USER
 
 RUN mkdir -p /app/lib \
@@ -15,9 +15,10 @@ RUN mkdir -p /app/lib \
 
 USER $APPLICATION_USER
 
+WORKDIR /app
+
 COPY --from=builder /app/server/build/libs/server.jar /app/lib/server.jar
 COPY --from=builder /app/server/build/scriptsShadow/server /app/lib/server
-WORKDIR /app
 
 ENV JAVA_OPTS "-server -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:InitialRAMFraction=2 -XX:MinRAMFraction=2 -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:+UseStringDeduplication"
 

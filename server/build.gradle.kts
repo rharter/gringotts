@@ -50,9 +50,11 @@ dependencies {
   implementation("com.squareup.sqldelight:runtime-jvm:$sqldelightVersion")
   implementation("com.squareup.sqldelight:jdbc-driver:$sqldelightVersion")
   implementation("com.squareup.sqldelight:coroutines-extensions:$sqldelightVersion")
-//  implementation("com.h2database:h2:1.4.200")
-  implementation("org.mariadb.jdbc:mariadb-java-client:2.1.2")
-  implementation("com.mchange:c3p0:0.9.5.5")
+  implementation("com.zaxxer:HikariCP:3.4.5")
+
+  implementation("com.h2database:h2:1.4.200")
+  implementation("mysql:mysql-connector-java:8.0.21")
+  implementation("com.google.cloud.sql:mysql-socket-factory-connector-j-8:1.0.16")
 }
 
 application {
@@ -65,9 +67,9 @@ tasks.withType<ShadowJar> {
 
   configurations = listOf(runtimeClasspath)
 
+  mergeServiceFiles()
+
   from(jar.archiveFile)
 
-  archiveBaseName.value("server")
-  classifier = null
-  version = null
+  archiveFileName.value("server.jar")
 }
