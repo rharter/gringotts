@@ -53,6 +53,7 @@ dependencies {
   implementation("com.zaxxer:HikariCP:3.4.5")
 
   implementation("com.h2database:h2:1.4.200")
+  implementation("org.mariadb.jdbc:mariadb-java-client:2.1.2")
   implementation("mysql:mysql-connector-java:8.0.21")
   implementation("com.google.cloud.sql:mysql-socket-factory-connector-j-8:1.0.16")
 }
